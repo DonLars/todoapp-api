@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="author" content="Lars Wagner" />
+    <meta name="description" content="First TODO-App" />
+    <title>My 1st TODO App</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main>
+      <article class="todo-article">
+        <h1>My 1st TODO-App</h1>
+        <h2 class="claim">Getting things done…</h2>
+
+        <form id="task-form">
+          <input
+            type="text"
+            name="Eingabe"
+            id="input"
+            placeholder="Start your list!"
+            autofocus
+          />
+
+          <button id="add-btn" type="submit">add</button>
+          <button id="clear-btn">remove</button>
+
+          <div class="filter">
+            <label for="filter-all">
+              <input
+                type="radio"
+                name="filter"
+                id="filter-all"
+                value="all"
+                checked
+              />
+              all
+            </label>
+            <label for="filter-open">
+              <input type="radio" name="filter" id="filter-open" value="open" />
+              open
+            </label>
+            <label for="filter-done">
+              <input type="radio" name="filter" id="filter-done" value="done" />
+              done
+            </label>
+          </div>
+        </form>
+
+        <ul id="task-list"></ul>
+      </article>
+    </main>
+    <script src="script.js"></script>
+  </body>
+</html>
