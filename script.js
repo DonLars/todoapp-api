@@ -1,16 +1,14 @@
 "use strict";
 
-/*    SETTING UP REFERENCES
-========================================================================== */
-const taskForm = document.getElementById("task-form"); // reference to form
-const input = document.getElementById("input"); // reference to inputfield
-const taskList = document.getElementById("task-list"); // reference to task list
-const clearButton = document.getElementById("clear-btn"); // reference to clear button
-const checkboxes = document.querySelectorAll(".toggle-complete"); // get all checkboxes
-const claim = document.querySelector(".claim"); // reference to claim
+/* SETTING UP REFERENCES ======================================================== */
+const taskForm = document.getElementById("task-form");
+const input = document.getElementById("input");
+const taskList = document.getElementById("task-list");
+const clearButton = document.getElementById("clear-btn");
+const checkboxes = document.querySelectorAll(".toggle-complete");
+const claim = document.querySelector(".claim");
 
-/*    SETTING UP STATE
-========================================================================== */
+/* SETTING UP STATE ============================================================= */
 const state = {
   currentFilter: "all", // "all", "done", "open"
   tasks: [],
@@ -24,13 +22,13 @@ if (state.tasks.length === 0 && localStorage.getItem("tasks") === null) {
     isDone: false,
   };
   state.tasks.push(testTodo);
-  saveTodosToLocalStorage();
+  saveTodosToApi();
 }
 
-/*    FUNCTION - LOAD TODOS FROM LOCAL STORAGE
-========================================================================== */
-function getTodosFromLocalStorage() {
-  //  state.tasks = JSON.parse(localStorage.getItem("tasks")) ?? []; // load tasks from localStorage OR set a new array
+/* FUNCTION - LOAD TODOS FROM API ====================================== */
+
+function getTodosFromApi() {
+  //state.tasks = JSON.parse(localStorage.getItem("tasks")) ?? [];
 
   fetch("http://localhost:4730/todos")
     .then((res) => res.json())
@@ -41,15 +39,31 @@ function getTodosFromLocalStorage() {
     });
 }
 
-/*    FUNCTION - SAVE TODOS TO LOCAL STORAGE
-========================================================================== */
-function saveTodosToLocalStorage() {
-  localStorage.setItem("tasks", JSON.stringify(state.tasks)); // save to localStorage
-  currentTaskCount();
+/* FUNCTION - SAVE TODOS TO API ======================================== */
+
+function saveTodosToApi() {
+  localStorage.setItem("tasks", JSON.stringify(state.tasks));
+  // Additional code for saving to external API, if needed
+  /*fetch("http://localhost:4730/todos", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(state.tasks),
+  })
+    .then((res) => res.json())
+    .then((newTodoFromApi) => {
+      //todos.push(state.tasks);
+      state.tasks = newTodoFromApi;
+      //render();
+    })
+    .catch((error) => {
+      console.error("Error saving todos to API:", error);
+      // Handle errors as needed
+    });*/
 }
 
-/*    FUNCTION - GENERATE HTML TEMPLATE
-========================================================================== */
+/* FUNCTION - GENERATE HTML TEMPLATE ============================================ */
 function generateTodoItemTemplate(task) {
   const li = document.createElement("li");
   li.classList.add("task-item");
@@ -62,9 +76,8 @@ function generateTodoItemTemplate(task) {
   checkbox.id = "checkbox-toogle-" + task.id;
   checkbox.classList.add("toggle-complete");
 
-  checkbox.checked = task.isDone; // set "checked" attribut based on task.isDone
+  checkbox.checked = task.isDone;
 
-  // Event-Listener für das Ändern des Checkbox-Status hinzufügen
   checkbox.addEventListener("change", function () {
     task.isDone = checkbox.checked;
 
@@ -73,7 +86,7 @@ function generateTodoItemTemplate(task) {
     } else {
       checkbox.removeAttribute("checked");
     }
-    saveTodosToLocalStorage();
+    saveTodosToApi();
   });
 
   const label = document.createElement("label");
@@ -91,157 +104,127 @@ function generateTodoItemTemplate(task) {
   return li;
 }
 
-/*    EVENT LISTENER - SUBMIT BUTTON
-// ========================================================================== */
+/* EVENT LISTENER - SUBMIT BUTTON =============================================== */
 taskForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
-  // Check for duplicates, if there are some tasks which
   const isDuplicate = state.tasks.some(
     (task) =>
-      task.description.toLowerCase() === input.value.trim().toLowerCase() // check if task in array === inputValue
+      task.description.toLowerCase() === input.value.trim().toLowerCase()
   );
 
   if (isDuplicate) {
     alert("Sorry, you can't add a duplicate task!");
   } else {
     if (input.value.trim() !== "") {
-      // if field is NOT clear update state
       state.tasks.push({
-        id: new Date().getTime(), // get time for create an id
-        description: input.value.trim(), // get input field, trim whitespaces before and after
-        isDone: false, // set complete status to false
+        //id: new Date().getTime(),
+        description: input.value.trim(),
+        isDone: false,
       });
 
-      // Render state
       render();
 
-      input.value = ""; // clear input field
-      input.focus(); // focus on input field for the next task
+      input.value = "";
+      input.focus();
     } else {
-      return; // do nothing
+      return;
     }
   }
 });
 
-/*    EVENT LISTENER - FILTERING
-========================================================================== */
-const filterRadios = document.querySelectorAll('input[name="filter"]'); // select radio inputs
+/* EVENT LISTENER - FILTERING ================================================== */
+const filterRadios = document.querySelectorAll('input[name="filter"]');
 filterRadios.forEach((radio) => {
   radio.addEventListener("change", function () {
-    state.currentFilter = this.value; // set currentfilter to this value
+    state.currentFilter = this.value;
     render();
   });
 });
 
-/*    EVENT LISTENER - CLEAR DONE TASKS
-========================================================================== */
+/* EVENT LISTENER - CLEAR DONE TASKS ============================================ */
 clearButton.addEventListener("click", function () {
   if (confirm("Do you really want to delete the complete list?")) {
     state.tasks = state.tasks.filter((task) => !task.isDone);
-    saveTodosToLocalStorage(); // save to localStorage after filtering
+    saveTodosToApi();
     render();
   }
 });
 
-/*    FUNCTION - DISPLAY
-========================================================================== */
+/* FUNCTION - DISPLAY =========================================================== */
 function display() {
-  taskList.innerHTML = ""; // clear taskList
+  taskList.innerHTML = "";
 
-  // Filter
-  const filteredTodos = tasks.filter((task) => {
-    if (currentFilter == "done") {
-      return task.isDone; // set task to isDone
+  const filteredTodos = state.tasks.filter((task) => {
+    if (state.currentFilter == "done") {
+      return task.isDone;
     }
-    if (currentFilter == "open") {
-      return !task.isDone; // set task to NOT isDone
+    if (state.currentFilter == "open") {
+      return !task.isDone;
     }
-    return true; // unfiltered tasks
+    return true;
   });
 
-  // Building list element with for each
   filteredTodos.forEach(function (task) {
-    const listItem = document.createElement("li"); // create list element
-    listItem.setAttribute("id", task.id); // add id to list element
-    listItem.classList.add("task-item"); // add task-item class to list element
-    listItem.innerHTML = `
-    <div class="checkbox-wrapper">
-      <input type="checkbox" name="is-done" class="toggle-complete" id="checkbox-${
-        task.id
-      }" ${task.isDone ? "checked" : ""}>
-      <label for="checkbox-${task.id}">${task.description}</label>
-      </div>
-      <button class="delete-task" id="${task.id}">X</button>
-    `; // add HTML template with the complete list item, checkbox, label, delete Button
-
-    taskList.append(listItem); // append to UL List
+    const listItem = generateTodoItemTemplate(task);
+    taskList.appendChild(listItem);
   });
 
-  // EVENTLISTENER - CHECKBOXES
-  const checkboxes = document.querySelectorAll(".toggle-complete"); // get all checkboxes
+  const checkboxes = document.querySelectorAll(".toggle-complete");
   checkboxes.forEach((checkbox) => {
     checkbox.addEventListener("change", () => {
-      const taskId = parseInt(checkbox.id.replace("checkbox-", "")); // remove checkbox prefix
-      const currentTask = tasks.find((task) => task.id === taskId); // find in tasks the current Task by compare the IDs
+      const taskId = parseInt(checkbox.id.replace("checkbox-", ""));
+      const currentTask = state.tasks.find((task) => task.id === taskId);
 
-      // Änderungen für Checkboxen
-      currentTask.isDone = checkbox.checked; // set current Task to the checked checkbox
-
-      onStateChange(); // save in localStorage and update the display
+      currentTask.isDone = checkbox.checked;
+      onStateChange();
     });
   });
 
-  /*    EVENT-LISTENER - REMOVE BUTTON
-========================================================================== */
   const deleteButtons = document.querySelectorAll(".delete-task");
   deleteButtons.forEach((button) => {
     button.addEventListener("click", () => {
-      const taskId = button.id; // Get id of the currently clicked "delete" button and save it to taskId
-      tasks = tasks.filter((removeTask) => removeTask.id !== parseInt(taskId)); // filter tasks array, keeping only tasks whose id is not equal to the clicked buttons id
-
-      localStorage.setItem("tasks", JSON.stringify(tasks)); // save tasks to localStorage
-      document.getElementById(taskId).remove(); // delete choosen ID from DOM
+      const taskId = button.id;
+      state.tasks = state.tasks.filter(
+        (removeTask) => removeTask.id !== parseInt(taskId)
+      );
+      saveTodosToApi();
+      render();
+      document.getElementById(taskId).remove();
     });
   });
 }
 
-/*    FUNCTION - ON STAGE (SAVE + DISPLAY WRAPPER)
-========================================================================== */
+/* FUNCTION - ON STAGE (SAVE + DISPLAY WRAPPER) ================================ */
 function onStateChange() {
-  //    Save to localstorage
-  localStorage.setItem("tasks", JSON.stringify(tasks)); // save to localStorage
+  localStorage.setItem("tasks", JSON.stringify(state.tasks));
   display();
   currentTaskCount();
 }
 
-/*    COUNT OPEN TASK - FUNCTION
-========================================================================== */
-
+/* COUNT OPEN TASK - FUNCTION =================================================== */
 function currentTaskCount() {
-  const openTasks = state.tasks.filter((task) => !task.isDone); // filter all tasks, if not isDone
+  const openTasks = state.tasks.filter((task) => !task.isDone);
 
   if (openTasks.length > 0) {
-    claim.textContent = `Getting ${openTasks.length} things done…`; // update frontend claim
+    claim.textContent = `Getting ${openTasks.length} things done…`;
   } else {
     claim.textContent = `Great, all tasks are completed!`;
   }
 }
 
-/*    FUNCTION - RENDER DATA FROM STATE
-========================================================================== */
+/* FUNCTION - RENDER DATA FROM STATE =========================================== */
 function render() {
   taskList.innerHTML = "";
 
-  // Filtering
   const filteredTodos = state.tasks.filter((task) => {
     if (state.currentFilter == "done") {
-      return task.isDone; // set task to isDone
+      return task.isDone;
     }
     if (state.currentFilter == "open") {
-      return !task.isDone; // set task to NOT isDone
+      return !task.isDone;
     }
-    return true; // unfiltered tasks
+    return true;
   });
 
   for (const task of filteredTodos) {
@@ -249,31 +232,27 @@ function render() {
     taskList.appendChild(newTodoItem);
   }
 
-  /*    EVENT-LISTENER - REMOVE BUTTON
-========================================================================== */
   const deleteButtons = document.querySelectorAll(".delete-task");
   deleteButtons.forEach((button) => {
     button.addEventListener("click", () => {
-      const buttonId = button.id; // save the button ID
-      const taskId = buttonId.replace("delete-btn-", ""); // extract the id
-
+      const buttonId = button.id;
+      const taskId = buttonId.replace("delete-btn-", "");
       state.tasks = state.tasks.filter(
         (removeTask) => removeTask.id !== parseInt(taskId)
       );
-      saveTodosToLocalStorage(); // save to localStorage
+      saveTodosToApi();
       render();
       const listItem = document.getElementById(taskId).closest(".task-item");
-      listItem.remove(); // delete entire <li> element
+      listItem.remove();
     });
   });
 
-  saveTodosToLocalStorage();
+  saveTodosToApi();
 }
 
-/*    FUNCTION - GET TODOS AND RENDER
-========================================================================== */
+/* FUNCTION - GET TODOS AND RENDER ============================================ */
 function initialize() {
-  getTodosFromLocalStorage();
+  getTodosFromApi();
   render();
   currentTaskCount();
 }
