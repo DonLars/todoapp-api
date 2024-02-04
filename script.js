@@ -1,18 +1,16 @@
 "use strict";
 
-/*    SETTING UP DOM ELEMENTS
+/* State and initializing
 ========================================================================== */
-const taskForm = document.getElementById("task-form"); // reference to form
-const input = document.getElementById("input"); // reference to inputfield
-const taskList = document.getElementById("task-list"); // reference to task list
-const clearButton = document.getElementById("clear-btn"); // reference to clear button
-const checkboxes = document.querySelectorAll(".toggle-complete"); // get all checkboxes
 
-/* API ELEMENTS */
+// DOM elements
+const taskForm = document.getElementById("task-form");
+const input = document.getElementById("input");
+const taskList = document.getElementById("task-list");
+const clearButton = document.getElementById("clear-btn");
 const apiUrl = "http://localhost:4730/todos";
 
-/*    SETTING UP STATE
-========================================================================== */
+// State
 const state = {
   currentFilter: "all", // "all", "done", "open"
   tasks: [],
@@ -20,204 +18,227 @@ const state = {
 
 initialize();
 
-/* FUNCTION - LOAD TODOS FROM API ====================================== */
+/* FUNCTION - to render filtered data from state
+========================================================================== */
+function render() {
+  taskList.innerHTML = "";
 
+  // Filtering todos
+  const filteredTodos = state.tasks.filter((task) => {
+    if (state.currentFilter == "done") {
+      return task.done; // set task to done
+    }
+    if (state.currentFilter == "open") {
+      return !task.done; // set task to NOT done
+    }
+    return true; // unfiltered tasks
+  });
+
+  for (const task of filteredTodos) {
+    taskList.appendChild(generateTodoItemTemplate(task));
+  }
+}
+
+/* FUNCTION - to get todos from the API
+========================================================================== */
 function getTodosFromApi() {
-  state.tasks = JSON.parse(localStorage.getItem("tasks")) ?? []; // load tasks from localStorage OR set a new array
-  /* fetch(apiUrl)
+  fetch(apiUrl)
     .then((response) => response.json())
     .then((todosFromApi) => {
       state.tasks = todosFromApi;
-      //console.log(state.tasks);
       render();
     })
     .catch((error) => {
       console.error("Error getting todos from API:", error);
-    }); */
+      alert("Sorry! API is offline, start server again with: npm run start");
+    })
+    .finally(() => console.log("test if api is online and offline"));
 }
 
-/*    FUNCTION - SAVE TODOS TO LOCAL STORAGE
+/* FUNCTION - to save a new todo to the API
 ========================================================================== */
-function saveTodosToApi() {
-  localStorage.setItem("tasks", JSON.stringify(state.tasks)); // save to localStorage
+function saveTodoToApi() {
+  const newTodoText = input.value.trim();
+  const newTodo = { description: newTodoText, done: false };
 
-  /*   const newTodoText = "test";
-  const newTodo = {
-    description: newTodoText,
-    done: false,
-  }; */
-  /* fetch(apiUrl, {
+  fetch(apiUrl, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(task),
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(newTodo),
   })
-    .then((res) => res.json())
+    .then((response) => response.json())
     .then((newTodoFromApi) => {
-      state.tasks.push(input.value);
+      state.tasks.push(newTodoFromApi);
       render();
     })
-    .catch((error) => {
-      console.error("Error saving todo to API:", error);
-    }); */
+    .catch((error) => console.error("Error saving todo to API:", error));
 }
 
-/*    FUNCTION - GENERATE HTML TEMPLATE
+/*  FUNCTION -  to update a todo in the API
+========================================================================== */
+function updateTodoToApi(task) {
+  fetch(apiUrl + `/${task.id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(task),
+  })
+    .then((response) => response.json())
+    .then((updatedTodoFromApi) => {
+      // finding the position from the changed task in the local state
+      const index = state.tasks.findIndex(
+        (task) => task.id === updatedTodoFromApi.id
+      );
+      // -1 means: not in this array
+      if (index !== -1) {
+        state.tasks[index] = updatedTodoFromApi;
+        render();
+      } else {
+        console.warn("Updated task not found in local state.");
+      }
+    })
+    .catch((error) => console.error("Error updating todo in API:", error));
+}
+
+/* FUNCTION - to delete a todo from the API
+========================================================================== */
+function deleteTodoFromApi(taskId) {
+  fetch(apiUrl + `/${taskId}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+  })
+    .then(() => {
+      // Remove the task with the specified id from the state.tasks array
+      state.tasks = state.tasks.filter((task) => task.id !== parseInt(taskId));
+      render();
+    })
+    .catch((error) => console.error("Error deleting todo from API:", error));
+}
+
+/* FUNCTION - to remove all completed todos from the API
+========================================================================== */
+function removeDoneTodosFromApi() {
+  // Filter out completed todos from the current state
+  const doneTodos = state.tasks.filter((task) => task.done);
+
+  // Use Promise.all for multiple API requests and delete many completed todos
+  Promise.all(
+    doneTodos.map((doneTodo) =>
+      fetch(apiUrl + `/${doneTodo.id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      })
+    )
+  )
+    .then(() => {
+      // Update the local state by filtering out completed todos
+      state.tasks = state.tasks.filter((task) => !task.done);
+      render();
+    })
+    .catch((error) =>
+      console.error("Error removing done todos from API:", error)
+    );
+}
+
+/* FUNCTION - to generate HTML template for a todo item
 ========================================================================== */
 function generateTodoItemTemplate(task) {
   const li = document.createElement("li");
   li.classList.add("task-item");
-  li.id = "task-" + task.id; // Setzen Sie die ID für das li-Element
+  li.id = `task-${task.id}`;
 
   const div = document.createElement("div");
   div.classList.add("checkbox-wrapper");
 
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
-  checkbox.id = "checkbox-toogle-" + task.id;
+  checkbox.id = `checkbox-toogle-${task.id}`;
   checkbox.classList.add("toggle-complete");
+  checkbox.checked = task.done;
 
-  checkbox.checked = task.isDone; // set "checked" attribut based on task.isDone
+  /* EVENT LISTENER - for changing the checkbox status
+  ========================================================================== */
+  checkbox.addEventListener("change", () => {
+    task.done = checkbox.checked;
+    checkbox.checked
+      ? checkbox.setAttribute("checked", "")
+      : checkbox.removeAttribute("checked");
 
-  // Event-Listener für das Ändern des Checkbox-Status hinzufügen
-  checkbox.addEventListener("change", function () {
-    task.isDone = checkbox.checked;
+    // Check if the task is already in the API
+    const existingTask = state.tasks.find((t) => t.id === task.id);
 
-    if (checkbox.checked) {
-      checkbox.setAttribute("checked", "");
+    if (existingTask) {
+      // If present, update the task in the API
+      updateTodoToApi(task);
     } else {
-      checkbox.removeAttribute("checked");
+      // If not present, it's a new task. Handle this case if needed.
+      console.warn("Task not found in API.");
     }
-    saveTodosToApi();
   });
 
   const label = document.createElement("label");
   label.innerText = task.description;
-  label.htmlFor = "checkbox-toggle-" + task.id;
+  label.htmlFor = `checkbox-toggle-${task.id}`;
 
   const button = document.createElement("button");
   button.type = "button";
   button.textContent = "X";
   button.classList.add("delete-task");
-  button.id = "delete-btn-" + task.id;
+  button.id = `delete-btn-${task.id}`;
+
+  /* EVENT LISTENER - for delete one task
+  ========================================================================== */
+  button.addEventListener("click", (event) => {
+    const taskId = parseInt(event.target.id.replace("delete-btn-", ""), 10);
+    deleteTodoFromApi(taskId);
+  });
 
   div.append(checkbox, label);
   li.append(div, button);
   return li;
 }
 
-/*    EVENT LISTENER - SUBMIT BUTTON
-// ========================================================================== */
+/* EVENT LISTENER - for submit form
+========================================================================== */
 taskForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
-  // Check for duplicates, if there are some tasks which
   const isDuplicate = state.tasks.some(
     (task) =>
-      task.description.toLowerCase() === input.value.trim().toLowerCase() // check if task in array === inputValue
+      task.description.toLowerCase() === input.value.trim().toLowerCase()
   );
 
   if (isDuplicate) {
     alert("Sorry, you can't add a duplicate task!");
-  } else {
-    if (input.value.trim() !== "") {
-      // if field is NOT clear update state
-      state.tasks.push({
-        id: new Date().getTime(), // get time for create an id
-        description: input.value.trim(), // get input field, trim whitespaces before and after
-        isDone: false, // set complete status to false
-      });
-
-      // Render state
-      render();
-      saveTodosToApi();
-
-      input.value = ""; // clear input field
-      input.focus(); // focus on input field for the next task
-    } else {
-      return; // do nothing
-    }
+  } else if (input.value.trim() !== "") {
+    render();
+    saveTodoToApi();
+    input.value = "";
+    input.focus();
   }
 });
 
-/*    EVENT LISTENER - FILTERING
+/* EVENT LISTENER - for filter radio buttons
 ========================================================================== */
-const filterRadios = document.querySelectorAll('input[name="filter"]'); // select radio inputs
+const filterRadios = document.querySelectorAll('input[name="filter"]');
 filterRadios.forEach((radio) => {
-  radio.addEventListener("change", function () {
-    state.currentFilter = this.value; // set currentfilter to this value
+  radio.addEventListener("change", () => {
+    state.currentFilter = radio.value;
     render();
   });
 });
 
-/*    EVENT LISTENER - CLEAR DONE TASKS
+/* EVENT LISTENER - for clearing completed tasks
 ========================================================================== */
-clearButton.addEventListener("click", function () {
-  if (confirm("Do you really want to delete the complete list?")) {
-    state.tasks = state.tasks.filter((task) => !task.isDone);
-    saveTodosToApi(); // save to localStorage after filtering
-    render();
+clearButton.addEventListener("click", () => {
+  if (confirm("Do you really want to delete all completed tasks?")) {
+    removeDoneTodosFromApi();
   }
 });
 
-/*    FUNCTION - RENDER DATA FROM STATE
-========================================================================== */
-function render() {
-  taskList.innerHTML = "";
-
-  // Filtering
-  const filteredTodos = state.tasks.filter((task) => {
-    if (state.currentFilter == "done") {
-      return task.isDone; // set task to isDone
-    }
-    if (state.currentFilter == "open") {
-      return !task.isDone; // set task to NOT isDone
-    }
-    return true; // unfiltered tasks
-  });
-
-  for (const task of filteredTodos) {
-    const newTodoItem = generateTodoItemTemplate(task);
-    taskList.appendChild(newTodoItem);
-  }
-
-  /*    EVENT-LISTENER - REMOVE BUTTON
-========================================================================== */
-  const deleteButtons = document.querySelectorAll(".delete-task");
-  deleteButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const buttonId = button.id; // save the button ID
-      const taskId = buttonId.replace("delete-btn-", ""); // extract the ID
-
-      // Filter out the task with the specified ID from the state
-      state.tasks = state.tasks.filter(
-        (removeTask) => removeTask.id !== parseInt(taskId)
-      );
-      saveTodosToApi(); // Save changes to the API
-      render();
-
-      const listItem = document.getElementById("task-" + taskId);
-      listItem.remove(); // remove the entire <li> element
-    });
-  });
-}
-
-/*    FUNCTION - GET TODOS AND RENDER
+/* Function to initialize the application
 ========================================================================== */
 function initialize() {
   getTodosFromApi();
-
-  // Add a default "placeholderTodo" if there are no tasks in localStorage
-  if (state.tasks.length === 0 && localStorage.getItem("tasks") === null) {
-    const placeholderTodo = {
-      id: new Date().getTime(),
-      description: "Start your first task 😜",
-      isDone: false,
-    };
-    state.tasks.push(placeholderTodo);
-    saveTodosToApi();
-  }
 
   render();
 }
