@@ -10,6 +10,22 @@ const taskList = document.getElementById("task-list");
 const clearButton = document.getElementById("clear-btn");
 const apiUrl = "http://localhost:4730/todos";
 
+// Modal Styling
+
+const corner = Swal.mixin({
+  toast: true,
+  position: "top-end",
+  title: "Sorry, API is offline!",
+  text: "Start server with: npm run start",
+  showConfirmButton: false,
+  timer: 3000,
+  timerProgressBar: true,
+  didOpen: (toast) => {
+    toast.onmouseenter = Swal.stopTimer;
+    toast.onmouseleave = Swal.resumeTimer;
+  },
+});
+
 // State
 const state = {
   currentFilter: "all", // "all", "done", "open"
@@ -50,7 +66,10 @@ function getTodosFromApi() {
     })
     .catch((error) => {
       console.error("Error getting todos from API:", error);
-      alert("Sorry! API is offline, start server again with: npm run start");
+      corner.fire({
+        icon: "error",
+        title: "Sorry, API is offline!",
+      });
     })
     .finally(() => console.log("test if api is online and offline"));
 }
@@ -208,7 +227,14 @@ taskForm.addEventListener("submit", (event) => {
   );
 
   if (isDuplicate) {
-    alert("Sorry, you can't add a duplicate task!");
+    Swal.fire({
+      position: "center",
+      popup: "swal2-show",
+      title: "Sorry",
+      text: "You can't add a duplicate task!",
+      icon: "warning",
+      confirmButtonText: "OK, thanks",
+    });
   } else if (input.value.trim() !== "") {
     render();
     saveTodoToApi();
