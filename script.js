@@ -70,8 +70,8 @@ function getTodosFromApi() {
         icon: "error",
         title: "Sorry, API is offline!",
       });
-    })
-    .finally(() => console.log("test if api is online and offline"));
+    });
+  //.finally(() => console.log("test if api is online and offline"));
 }
 
 /* FUNCTION - to save a new todo to the API
@@ -265,6 +265,5 @@ clearButton.addEventListener("click", () => {
 ========================================================================== */
 function initialize() {
   getTodosFromApi();
-
   render();
 }
