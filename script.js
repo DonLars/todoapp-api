@@ -1,5 +1,7 @@
 "use strict";
 
+import { fetchData, postData } from "./apiutils.js";
+
 /* State and initializing
 ========================================================================== */
 
@@ -8,8 +10,8 @@ const taskForm = document.getElementById("task-form");
 const input = document.getElementById("input");
 const taskList = document.getElementById("task-list");
 const clearButton = document.getElementById("clear-btn");
-const apiUrl = "http://localhost:4730/todos";
-
+/* const apiUrl = "http://localhost:4730/todos";
+ */
 // Modal Styling
 
 const corner = Swal.mixin({
@@ -58,8 +60,7 @@ function render() {
 /* FUNCTION - to get todos from the API
 ========================================================================== */
 function getTodosFromApi() {
-  fetch(apiUrl)
-    .then((response) => response.json())
+  fetchData() // Nochmal anschauen
     .then((todosFromApi) => {
       state.tasks = todosFromApi;
       render();
@@ -80,12 +81,7 @@ function saveTodoToApi() {
   const newTodoText = input.value.trim();
   const newTodo = { description: newTodoText, done: false };
 
-  fetch(apiUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(newTodo),
-  })
-    .then((response) => response.json())
+  postData(newTodo)
     .then((newTodoFromApi) => {
       state.tasks.push(newTodoFromApi);
       render();
@@ -140,6 +136,7 @@ function removeDoneTodosFromApi() {
   const doneTodos = state.tasks.filter((task) => task.done);
 
   // Use Promise.all for multiple API requests and delete many completed todos
+  //Promise All Settled
   Promise.all(
     doneTodos.map((doneTodo) =>
       fetch(apiUrl + `/${doneTodo.id}`, {
