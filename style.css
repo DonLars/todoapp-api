@@ -52,7 +52,7 @@ main {
   justify-content: space-between;
 }
 
-#task-list {
+.task-list {
   padding-left: 0;
 }
 .task-item {
@@ -71,24 +71,29 @@ main {
 }
 
 .checkbox-wrapper {
+  width: 100%;
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
   align-items: center;
-  gap: 1rem;
+  gap: 2rem;
 }
 
 /* Description */
 
-label {
+.hidden {
+  position: absolute;
+  left: -9999px;
+}
+.checkbox-wrapper label {
   cursor: pointer;
   color: black;
+  flex-grow: 2;
 }
 
 input[type="checkbox"]:checked + label {
   text-decoration: line-through;
   font-style: italic;
   color: var(--gradient1-color);
-  flex-grow: 1;
 }
 
 .task-item:has(input[type="checkbox"]:checked) {

@@ -5,26 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="author" content="Lars Wagner" />
     <meta name="description" content="First TODO-App" />
-    <title>My 1st TODO App</title>
+    <title>My 1st TODO App with Vue</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <main>
-      <article class="todo-article">
-        <h1>My 1st TODO-APP(I)</h1>
+      <article class="todo-article" id="app">
+        <h1>My Todo-App with Vue</h1>
         <h2 class="claim">Getting things done…</h2>
 
+        <!--         <pre>
+          {{ $data  }}
+        </pre> -->
         <form id="task-form">
+          <label class="hidden" for="input-field">new task</label>
           <input
             type="text"
-            name="Eingabe"
+            v-model="newTodoText"
+            name="input-field"
             id="input"
             placeholder="Start your list!"
             autofocus
           />
 
-          <button id="add-btn" type="submit">add</button>
-          <button id="clear-btn">remove</button>
+          <button id="add-btn" @click.prevent="addTodo" type="submit">
+            add
+          </button>
+          <button id="clear-btn" @click="deleteDoneTodos">remove</button>
 
           <div class="filter">
             <label for="filter-all">
@@ -33,25 +40,54 @@
                 name="filter"
                 id="filter-all"
                 value="all"
+                v-model="filter"
                 checked
               />
               all
             </label>
             <label for="filter-open">
-              <input type="radio" name="filter" id="filter-open" value="open" />
+              <input
+                type="radio"
+                name="filter"
+                id="filter-open"
+                value="open"
+                v-model="filter"
+              />
               open
             </label>
             <label for="filter-done">
-              <input type="radio" name="filter" id="filter-done" value="done" />
+              <input
+                type="radio"
+                name="filter"
+                id="filter-done"
+                value="done"
+                v-model="filter"
+              />
               done
             </label>
           </div>
         </form>
 
-        <ul id="task-list"></ul>
+        <ul class="task-list">
+          <li class="task-item" v-for="todo of filteredTodos" :key="todo.id">
+            <div class="checkbox-wrapper">
+              <input
+                type="checkbox"
+                name="item-1"
+                id="'item-' + todo.id"
+                :checked="todo.done"
+                @change="updateTodo(todo)"
+              />
+              <label :for="'item-' + todo.id">{{ todo.description }}</label>
+              <button class="delete-task" @click="deleteTodo(todo.id)">
+                X
+              </button>
+            </div>
+          </li>
+        </ul>
       </article>
     </main>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script type="module" src="script.js"></script>
+    <script src="https://unpkg.com/vue@latest"></script>
+    <script src="script.js"></script>
   </body>
 </html>

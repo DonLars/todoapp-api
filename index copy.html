@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="author" content="Lars Wagner" />
+    <meta name="description" content="First TODO-App" />
+    <title>My 1st TODO App with Vue</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main>
+      <article class="todo-article" id="app">
+        <h1>My 1st TODO-APP with Vue</h1>
+        <h2 class="claim">Getting things done…</h2>
+
+        <!-- <button @click="switchOnOff" :class="{ dark: isDarkMode }">
+          {{ switchText }}
+        </button>-->
+
+        <form @submit.prevent="addTodo">
+          <label for="input-field">Neue Aufgabe</label>
+          <input
+            type="text"
+            v-model="newTodoText"
+            name="input-field"
+            id="input"
+            placeholder="Start your list!"
+            autofocus
+          />
+
+          <button id="add-btn" type="submit">add</button>
+          <button id="clear-btn">remove</button>
+
+          <div class="filter">
+            <label for="filter-all">
+              <input
+                type="radio"
+                name="filter"
+                id="filter-all"
+                value="all"
+                checked
+              />
+              all
+            </label>
+            <label for="filter-open">
+              <input type="radio" name="filter" id="filter-open" value="open" />
+              open
+            </label>
+            <label for="filter-done">
+              <input type="radio" name="filter" id="filter-done" value="done" />
+              done
+            </label>
+          </div>
+        </form>
+
+        <ul class="task-list">
+          <li v-for="todo in todos" :key="todo.id">
+            <input type="checkbox" name="item-1" id="item-1" />
+            <label for="item-1">{{ todo.description }}</label>
+          </li>
+        </ul>
+      </article>
+    </main>
+    <script src="https://unpkg.com/vue@latest"></script>
+    <script type="module" src="script.js"></script>
+  </body>
+</html>
