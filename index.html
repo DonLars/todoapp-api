@@ -14,7 +14,7 @@
         <h1>My Todo-App with Vue</h1>
         <h2 class="claim">Getting things done…</h2>
 
-        <!--         <pre>
+        <!-- <pre>
           {{ $data  }}
         </pre> -->
         <form id="task-form">
@@ -28,7 +28,7 @@
             autofocus
           />
 
-          <button id="add-btn" @click.prevent="addTodo" type="submit">
+          <button id="add-btn" @click.prevent="addTodo()" type="submit">
             add
           </button>
           <button id="clear-btn" @click="deleteDoneTodos">remove</button>

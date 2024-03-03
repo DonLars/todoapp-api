@@ -8,26 +8,20 @@ Vue.createApp({
       todos: [],
       newTodoText: "",
       apiUrl: "http://localhost:4730/todos/",
-      filter: "all", // Initial filter "all"
+      filter: "all", // Initial filter "all", "open", "done"
     };
   },
   computed: {
     filteredTodos() {
-      // Je nach ausgewähltem Filter die Todos filtern
+      // selected filter
       if (this.filter === "open") {
         return this.todos.filter((todo) => !todo.done);
       } else if (this.filter === "done") {
         return this.todos.filter((todo) => todo.done);
       } else {
-        // "all" oder anderer Filter, alle Todos anzeigen
+        // "all" or another filter
         return this.todos;
       }
-    },
-  },
-  watch: {
-    // Watch for changes in the filter and update localStorage
-    filter(newValue) {
-      localStorage.setItem("todoFilter", newValue);
     },
   },
   methods: {
@@ -44,6 +38,7 @@ Vue.createApp({
       })
         .then((response) => response.json())
         .then((jsonData) => {
+          console.log();
           const isDuplicate = this.todos.some(
             (task) =>
               task.description.toLowerCase() ===
@@ -99,11 +94,9 @@ Vue.createApp({
       if (confirm("Do you really want to delete all completed tasks?")) {
         // Filter out completed todos from the current state
         const doneTodos = this.todos.filter((todo) => todo.done);
-
         if (doneTodos.length === 0) {
           // No done tasks
           console.log("No completed tasks to delete");
-
           return;
         }
 
@@ -119,7 +112,6 @@ Vue.createApp({
           .then(() => {
             // Update the local state by filtering out completed todos
             this.todos = this.todos.filter((todo) => !todo.done);
-            console.log("Completed tasks deleted successfully");
           })
           .catch((error) =>
             console.error("Error removing done todos from API:", error)
@@ -128,11 +120,6 @@ Vue.createApp({
     },
   },
   created() {
-    // Laden des gespeicherten Filters beim Initialisieren der App
-    const storedFilter = localStorage.getItem("todoFilter");
-    if (storedFilter) {
-      this.filter = storedFilter;
-    }
     fetch(this.apiUrl)
       .then((response) => response.json())
       .then((jsonData) => (this.todos = jsonData));
