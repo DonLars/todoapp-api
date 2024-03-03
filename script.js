@@ -51,7 +51,6 @@ Vue.createApp({
         })
           .then((response) => response.json())
           .then((jsonData) => {
-            // Füge die Aufgabe zu todos hinzu
             this.todos.push(jsonData);
             this.newTodoText = "";
           });
