@@ -31,28 +31,31 @@ Vue.createApp({
         done: false,
       };
 
-      fetch(this.apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newTodoObject),
-      })
-        .then((response) => response.json())
-        .then((jsonData) => {
-          console.log();
-          const isDuplicate = this.todos.some(
-            (task) =>
-              task.description.toLowerCase() ===
-              this.newTodoText.trim().toLowerCase()
-          );
-          if (this.newTodoText === "") {
-            alert("Write something down!");
-          } else if (isDuplicate) {
-            alert("You can't add a duplicate task!");
-          } else {
+      const isDuplicate = this.todos.some(
+        (task) =>
+          task.description.toLowerCase() ===
+          this.newTodoText.trim().toLowerCase()
+      );
+
+      if (this.newTodoText === "") {
+        alert("Write something down!");
+        this.newTodoText = "";
+      } else if (isDuplicate) {
+        alert("You can't add a duplicate task!");
+        this.newTodoText = "";
+      } else {
+        fetch(this.apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newTodoObject),
+        })
+          .then((response) => response.json())
+          .then((jsonData) => {
+            // Füge die Aufgabe zu todos hinzu
             this.todos.push(jsonData);
             this.newTodoText = "";
-          }
-        });
+          });
+      }
     },
     updateTodo(todo) {
       const cloneCurrentTodo = {
